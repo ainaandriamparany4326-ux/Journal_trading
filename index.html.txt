@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Journal de Trading</title>
+  <style>
+    body{font-family:system-ui,Arial;margin:0;background:#f6f7fb}
+    header{background:#111827;color:#fff;padding:18px 16px}
+    header h1{margin:0;font-size:18px}
+    main{padding:16px;max-width:980px;margin:auto}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin:12px 0;box-shadow:0 2px 10px rgba(0,0,0,.04)}
+    label{display:block;font-size:12px;color:#374151;margin-top:10px}
+    input,select,textarea{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:10px;margin-top:6px;font-size:14px}
+    textarea{min-height:88px}
+    button{padding:10px 12px;border:0;border-radius:12px;background:#111827;color:#fff;font-weight:600;margin-top:12px}
+    button.secondary{background:#e5e7eb;color:#111827}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    @media(max-width:720px){.grid,.grid3{grid-template-columns:1fr}}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #e5e7eb;font-size:13px;vertical-align:top}
+    th{text-align:left;color:#111827}
+    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:600}
+    .row-actions button{margin-right:8px}
+    .muted{color:#6b7280;font-size:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📒 Journal de Trading (Forex • Gold • BTC)</h1>
+    <div class="muted">Sauvegarde sur ton téléphone (LocalStorage) — gratuit</div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2 style="margin:0 0 8px 0;font-size:16px;">Ajouter un trade</h2>
+
+      <div class="grid3">
+        <div>
+          <label>Date</label>
+          <input id="date" type="date"/>
+        </div>
+        <div>
+          <label>Marché</label>
+          <select id="market">
+            <option>Forex</option>
+            <option>Gold (XAUUSD)</option>
+            <option>BTC</option>
+          </select>
+        </div>
+        <div>
+          <label>Setup</label>
+          <input id="setup" placeholder="ex: OB + Retest / Breakout / Pullback"/>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Direction</label>
+          <select id="side">
+            <option>Buy</option>
+            <option>Sell</option>
+          </select>
+        </div>
+        <div>
+          <label>Timeframe</label>
+          <select id="tf">
+            <option>M1</option><option>M5</option><option>M15</option><option>M30</option>
+            <option>H1</option><option>H4</option><option>D1</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid3">
+        <div>
+          <label>Entrée</label>
+          <input id="entry" type="number" step="0.00001" placeholder="ex: 2012.50"/>
+        </div>
+        <div>
+          <label>Stop Loss</label>
+          <input id="sl" type="number" step="0.00001" placeholder="ex: 2008.00"/>
+        </div>
+        <div>
+          <label>Take Profit</label>
+          <input id="tp" type="number" step="0.00001" placeholder="ex: 2023.00"/>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Résultat</label>
+          <select id="result">
+            <option>Win</option>
+            <option>Loss</option>
+            <option>BE</option>
+          </select>
+        </div>
+        <div>
+          <label>P/L (en $ ou en points)</label>
+          <input id="pl" type="number" step="0.01" placeholder="ex: 25.5"/>
+        </div>
+      </div>
+
+      <label>Notes (plan, émotion, erreurs, amélioration)</label>
+      <textarea id="notes" placeholder="ex: J’ai respecté mon plan / J’ai FOMO / etc."></textarea>
+
+      <label>Capture (option) — colle un lien (Drive, Imgur, etc.)</label>
+      <input id="img" placeholder="https://..." />
+
+      <button onclick="addTrade()">✅ Enregistrer</button>
+      <button class="secondary" onclick="exportJSON()">⬇️ Exporter (backup)</button>
+      <button class="secondary" onclick="importJSON()">⬆️ Importer</button>
+      <button class="secondary" onclick="clearAll()">🗑️ Tout effacer</button>
+    </div>
+
+    <div class="card">
+      <div class="grid3">
+        <div>
+          <h2 style="margin:0;font-size:16px;">Historique</h2>
+          <div class="muted" id="stats"></div>
+        </div>
+        <div>
+          <label>Filtre marché</label>
+          <select id="filterMarket" onchange="render()">
+            <option value="">Tous</option>
+            <option>Forex</option>
+            <option>Gold (XAUUSD)</option>
+            <option>BTC</option>
+          </select>
+        </div>
+        <div>
+          <label>Recherche (setup / notes)</label>
+          <input id="q" placeholder="ex: OB" oninput="render()"/>
+        </div>
+      </div>
+
+      <div style="overflow:auto;margin-top:10px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Marché</th><th>Side</th><th>Entry/SL/TP</th><th>Résultat</th><th>Notes</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const KEY = "trading_journal_v1";
+    const $ = (id)=>document.getElementById(id);
+
+    function load(){ return JSON.parse(localStorage.getItem(KEY) || "[]"); }
+    function save(data){ localStorage.setItem(KEY, JSON.stringify(data)); }
+
+    function addTrade(){
+      const trade = {
+        id: crypto.randomUUID(),
+        date: $("date").value || new Date().toISOString().slice(0,10),
+        market: $("market").value,
+        setup: $("setup").value.trim(),
+        side: $("side").value,
+        tf: $("tf").value,
+        entry: $("entry").value,
+        sl: $("sl").value,
+        tp: $("tp").value,
+        result: $("result").value,
+        pl: Number($("pl").value || 0),
+        notes: $("notes").value.trim(),
+        img: $("img").value.trim()
+      };
+      const data = load();
+      data.unshift(trade);
+      save(data);
+      ["setup","entry","sl","tp","pl","notes","img"].forEach(id=>$(id).value="");
+      render();
+    }
+
+    function delTrade(id){
+      const data = load().filter(t=>t.id!==id);
+      save(data); render();
+    }
+
+    function editTrade(id){
+      const data = load();
+      const t = data.find(x=>x.id===id);
+      if(!t) return;
+      $("date").value = t.date;
+      $("market").value = t.market;
+      $("setup").value = t.setup;
+      $("side").value = t.side;
+      $("tf").value = t.tf;
+      $("entry").value = t.entry;
+      $("sl").value = t.sl;
+      $("tp").value = t.tp;
+      $("result").value = t.result;
+      $("pl").value = t.pl;
+      $("notes").value = t.notes;
+      $("img").value = t.img;
+      delTrade(id);
+      window.scrollTo({top:0, behavior:"smooth"});
+    }
+
+    function exportJSON(){
+      const data = load();
+      const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "journal-trading-backup.json";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    function importJSON(){
+      const inp = document.createElement("input");
+      inp.type="file"; inp.accept="application/json";
+      inp.onchange = async ()=>{
+        const file = inp.files[0];
+        if(!file) return;
+        const text = await file.text();
+        try{
+          const arr = JSON.parse(text);
+          if(!Array.isArray(arr)) throw new Error("format");
+          save(arr); render();
+        }catch(e){
+          alert("Fichier invalide.");
+        }
+      };
+      inp.click();
+    }
+
+    function clearAll(){
+      if(confirm("Tout supprimer ?")){ localStorage.removeItem(KEY); render(); }
+    }
+
+    function render(){
+      const data = load();
+      const fm = $("filterMarket").value;
+      const q = $("q").value.trim().toLowerCase();
+      const filtered = data.filter(t=>{
+        const okMarket = !fm || t.market===fm;
+        const hay = (t.setup+" "+t.notes).toLowerCase();
+        const okQ = !q || hay.includes(q);
+        return okMarket && okQ;
+      });
+
+      // stats
+      const wins = filtered.filter(t=>t.result==="Win").length;
+      const losses = filtered.filter(t=>t.result==="Loss").length;
+      const be = filtered.filter(t=>t.result==="BE").length;
+      const totalPL = filtered.reduce((s,t)=>s+(Number(t.pl)||0),0);
+      const wr = (wins+losses) ? (wins/(wins+losses)*100) : 0;
+      $("stats").innerHTML =
+        Trades: <b>${filtered.length}</b> • Win: <b>${wins}</b> • Loss: <b>${losses}</b> • BE: <b>${be}</b> • WR: <b>${wr.toFixed(1)}%</b> • P/L: <b>${totalPL.toFixed(2)}</b>;
+
+      // rows
+      $("rows").innerHTML = filtered.map(t=>`
+        <tr>
+          <td>${t.date}<br><span class="muted">${t.tf}</span></td>
+          <td><span class="pill">${t.market}</span><br><span class="muted">${escapeHtml(t.setup)}</span></td>
+          <td>${t.side}</td>
+          <td class="muted">E: ${t.entry || "-"}<br>SL: ${t.sl || "-"}<br>TP: ${t.tp || "-"}</td>
+          <td><b>${t.result}</b><br><span class="muted">P/L: ${Number(t.pl||0).toFixed(2)}</span></td>
+          <td>${escapeHtml(t.notes || "")}${t.img? <div class="muted"><a href="${t.img}" target="_blank">📷 capture</a></div>:""}</td>
+          <td class="row-actions">
+            <button class="secondary" onclick="editTrade('${t.id}')">✏️</button>
+            <button class="secondary" onclick="delTrade('${t.id}')">🗑️</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function escapeHtml(s){
+      return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+
+    // init
+    $("date").value = new Date().toISOString().slice(0,10);
+    render();
+  </script>
+</body>
+</html>
